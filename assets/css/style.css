@@ -24,6 +24,11 @@ a { color: var(--link); }
 .site-header__theme:hover { color: var(--text); }
 
 .page { max-width: 62rem; margin: 0 auto; padding: 1rem; }
+
+/* embedded in another site: no own header, tighter padding */
+.embed .site-header { display: none; }
+.embed .page { padding: 0.5rem 0.25rem; }
+.embed .site-footer { margin-top: 1rem; }
 .page h1, .page h2 { line-height: 1.2; }
 
 .site-footer {

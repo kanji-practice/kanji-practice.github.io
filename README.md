@@ -80,3 +80,18 @@ It serves the built `_site/` folder, so build first (`bundle exec jekyll build`,
 lock is on). Then ask Claude Code to start `kanji-site`, or open <http://localhost:4100> yourself after running the
 `python3 -m http.server 4100 --directory _site` command. Rebuild and reload to see changes. The live site is
 <https://kanji-practice.github.io>.
+
+## Embedding in another site
+
+Add `?embed=1` to the address to get a version without the site header, meant for an `<iframe>`:
+
+```html
+<iframe src="https://kanji-practice.github.io/?embed=1&theme=light" title="Kanji practice" allow="clipboard-write"
+        style="width:100%;height:85vh;border:0"></iframe>
+```
+
+- `theme=light|dark` sets the colours; the host page can change them later with
+  `frame.contentWindow.postMessage({kanjiTheme: 'dark'}, 'https://kanji-practice.github.io')`.
+- Give the frame a fixed height (such as `85vh`) and let it scroll inside: the worksheet preview and the print
+  dialog (`window.print()`) work inside the frame and print only the worksheet.
+- The password prompt appears inside the frame; the unlocked state lasts until the frame reloads.

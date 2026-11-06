@@ -16,6 +16,23 @@
         document.documentElement.setAttribute('data-theme', theme);
       })();
     </script>
+    <script>
+      /* Embedded in another site (?embed=1): hide the own header, follow the host page's theme (?theme=dark|light,
+         later changes arrive as postMessage {kanjiTheme: 'dark'|'light'}) and open links in a new tab. */
+      (function () {
+        var q = new URLSearchParams(location.search), root = document.documentElement;
+        if (!q.has('embed')) return;
+        root.classList.add('embed');
+        if (q.get('theme') === 'dark' || q.get('theme') === 'light') root.setAttribute('data-theme', q.get('theme'));
+        window.addEventListener('message', function (e) {
+          var t = e.data && e.data.kanjiTheme;
+          if (t === 'dark' || t === 'light') root.setAttribute('data-theme', t);
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+          Array.prototype.forEach.call(document.querySelectorAll('.site-footer a'), function (a) { a.target = '_blank'; a.rel = 'noopener'; });
+        });
+      })();
+    </script>
     <link rel="stylesheet" href="/assets/css/style.css">
   </head>
   <body>
