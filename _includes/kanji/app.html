@@ -115,6 +115,16 @@
   .kj-mini { font: inherit; font-size: 1.15em; width: 1.9em; height: 1.9em; border-radius: 0.3em; border: 0; background: var(--kj-card);
     color: var(--kj-ink); cursor: pointer; padding: 0; }
   .kj-mini:hover { background: var(--kj-hover); }
+  .kj-picked { display: flex; align-items: center; gap: 0.8em; margin: 0 0 0.4em; color: var(--kj-text); }
+  .kj-picked[hidden] { display: none; }
+  .kj-picked__char { font-size: 2.2em; line-height: 1; color: var(--kj-ink); }
+  .kj-picked__info { display: grid; gap: 0.1em; }
+  .kj-picked__row { display: flex; gap: 0.6em; }
+  .kj-picked__row b { flex: none; width: 2.4em; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--kj-muted); padding-top: 0.25em; }
+  .kj-picked__reads { display: flex; flex-wrap: wrap; gap: 0.1em 0.9em; }
+  .kj-picked__reads small { color: var(--kj-muted); }
+  .kj-picked__n { margin-left: auto; color: var(--kj-muted); }
+  .kj-mini--on, .kj-mini--on:hover { background: var(--kj-on); color: var(--kj-on-ink); }
   .kj-more { align-self: center; font-size: 0.7em; color: var(--kj-muted); padding: 0 0.5em; }
 
   .kj-checks { display: flex; flex-wrap: wrap; gap: 0.4em 1.4em; margin: 0.8em 0 0; font-size: 0.8em; }
@@ -244,8 +254,9 @@
         <span>(up to 150 per run)</span>
       </div>
     </div>
+    <p class="kj-picked" id="kj-b-picked" aria-live="polite" hidden></p>
     <div class="kj-strip" id="kj-b-preview"></div>
-    <p class="kj-note">Filters combine: only kanji matching all of them. One page per kanji.</p>
+    <p class="kj-note">Filters combine: only kanji matching all of them. One page per kanji. Click a kanji to see its meaning; Ctrl-click adds or removes one, Shift-click selects a range. Generate then covers just the selection.</p>
     <div class="kj-actions"><button type="button" class="kj-btn kj-btn--primary" id="kj-b-generate" disabled>Generate</button></div>
   </section>
 

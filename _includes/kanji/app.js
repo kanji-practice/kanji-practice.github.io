@@ -467,7 +467,7 @@
   });
 
   /* ---------- Bundles tab ---------- */
-  var bundleChars = [];
+  var bundleChars = [], picked = [], anchor = -1, last = '';
   function bundleSelect() {
     var level = +$('#kj-b-level').value, grade = +$('#kj-b-grade').value, top = +$('#kj-b-top').value;
     if (!level && !grade && !top) return [];
@@ -487,10 +487,11 @@
   function updateBundle() {
     ready.then(function () {
       bundleChars = bundleSelect().map(function (k) { return k.char; });
+      picked = []; anchor = -1; showPicked();
       var count = bundleChars.length, from = $('#kj-b-from'), to = $('#kj-b-to');
       $('#kj-b-count').textContent = count ? count + ' kanji, most frequent first' : 'Choose at least one filter.';
       $('#kj-b-preview').innerHTML = bundleChars.slice(0, 400).map(function (c) {
-        return '<button type="button" class="kj-mini" data-char="' + esc(c) + '" lang="ja" title="' +
+        return '<button type="button" class="kj-mini" aria-pressed="false" data-char="' + esc(c) + '" lang="ja" title="' +
           esc((byChar[c].meanings[0] || '')) + '">' + esc(c) + '</button>';
       }).join('') + (count > 400 ? '<span class="kj-more">+' + (count - 400) + ' more</span>' : '');
       from.max = to.max = Math.max(count, 1);
@@ -508,8 +509,8 @@
     return [from, to];
   }
   function rangeNote() {
-    var r = bundleRange();
-    $('#kj-b-generate').innerHTML = icon('sheet') + 'Generate ' + (r[1] - r[0] + 1) + (r[1] === r[0] ? ' page' : ' pages');
+    var r = bundleRange(), n = picked.length || r[1] - r[0] + 1;
+    $('#kj-b-generate').innerHTML = icon('sheet') + 'Generate ' + n + (n === 1 ? ' page' : ' pages') + (picked.length ? ' (selected)' : '');
   }
   $$('#kj-b-level, #kj-b-grade, #kj-b-top').forEach(function (el) { el.addEventListener('change', updateBundle); });
   $$('#kj-b-from, #kj-b-to').forEach(function (el) { el.addEventListener('input', rangeNote); });
@@ -523,11 +524,47 @@
   $('#kj-b-preview').addEventListener('click', function (e) {
     var t = e.target.closest('[data-char]');
     if (!t) return;
-    input.value = t.getAttribute('data-char');
-    showTab('search');
-    runSearch();
+    var chars = bundleChars.slice(0, 400), c = t.getAttribute('data-char'), idx = chars.indexOf(c);
+    if (e.shiftKey && anchor >= 0) {
+      var lo = Math.min(anchor, idx), hi = Math.max(anchor, idx);
+      picked = chars.slice(lo, hi + 1);
+    } else if (e.ctrlKey || e.metaKey) {
+      var i = picked.indexOf(c);
+      if (i < 0) picked.push(c); else picked.splice(i, 1);
+      anchor = idx;
+    } else {
+      picked = picked.length === 1 && picked[0] === c ? [] : [c];
+      anchor = idx;
+    }
+    last = c;
+    $$('#kj-b-preview .kj-mini').forEach(function (m) {
+      var on = picked.indexOf(m.getAttribute('data-char')) >= 0;
+      m.classList.toggle('kj-mini--on', on);
+      m.setAttribute('aria-pressed', on);
+    });
+    showPicked();
+    rangeNote();
   });
+  /* header above the strip: meanings and readings of the last-clicked kanji, plus a count when several are selected */
+  function showPicked() {
+    var box = $('#kj-b-picked'), k = byChar[last];
+    box.hidden = !picked.length || !k;
+    function row(label, items, lang) {
+      return items.length ? '<span class="kj-picked__row"><b>' + label + '</b><span' + (lang ? ' lang="' + lang + '"' : '') + '>' +
+        esc(items.join(lang === 'ja' ? '、' : ', ')) + '</span></span>' : '';
+    }
+    function reads(label, items) {
+      return items.length ? '<span class="kj-picked__row"><b>' + label + '</b><span class="kj-picked__reads">' + items.map(function (r) {
+        return '<span><span lang="ja">' + esc(r) + '</span> <small>' + esc(Romaji.romaji(r)) + '</small></span>';
+      }).join('') + '</span></span>' : '';
+    }
+    box.innerHTML = box.hidden ? '' :
+      '<span class="kj-picked__char" lang="ja">' + esc(k.char) + '</span><span class="kj-picked__info">' +
+      row('EN', k.en.slice(0, 4)) + row('DE', k.de.slice(0, 4)) + reads('On', k.on) + reads('Kun', k.kun) + '</span>' +
+      (picked.length > 1 ? '<small class="kj-picked__n">' + picked.length + ' selected</small>' : '');
+  }
   $('#kj-b-generate').addEventListener('click', function () {
+    if (picked.length) { generateKanji(picked.slice(), bundleName() + '_selected'); return; }
     var r = bundleRange();
     generateKanji(bundleChars.slice(r[0] - 1, r[1]), bundleName() + (bundleChars.length > MAX_PAGES ? '_' + r[0] + '-' + r[1] : ''));
   });
