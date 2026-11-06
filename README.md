@@ -33,8 +33,50 @@ Updating KanjiVG or OpenJLPT means moving the submodule (`git -C sources/kanjivg
 
 Pushing to `main` runs `.github/workflows/pages.yml` (Settings → Pages → Source: GitHub Actions).
 
-## Optional password lock
+## Password lock (currently ON)
 
-To put the app behind a password, add `protect: kanji` to the front matter of `index.html` and add a repository
-secret `KANJI_PASSWORD` (Settings → Secrets and variables → Actions). The page is then encrypted at build time
-(`_plugins/site_lock.rb`, `assets/js/site-lock.js`). Remove the line to make it public again; nothing else changes.
+<https://kanji-practice.github.io> asks for a password before the app appears. GitHub Pages is public hosting, so the
+page is **encrypted at build time** (AES-256-GCM, key derived from the password with PBKDF2) and decrypted in the
+visitor's browser (`_plugins/site_lock.rb`, `assets/js/site-lock.js`). The password is never in the repository.
+The key lives only in the page's memory, so every reload asks again.
+
+How it works:
+
+1. `index.html` has `protect: kanji` in its front matter. That line turns the lock on.
+2. The password is the GitHub repository secret **`KANJI_PASSWORD`**
+   (Settings → Secrets and variables → Actions → Repository secrets).
+3. On every push to `main`, the workflow builds with `JEKYLL_ENV=production` and the secret, and publishes the
+   encrypted page. A production build without the secret fails on purpose, so the site can never go out unprotected
+   by mistake; the previous version stays online.
+
+Common tasks:
+
+- **Change the password:** update the `KANJI_PASSWORD` secret, then re-run the workflow (Actions → Deploy site →
+  Run workflow) or push any commit.
+- **Log everyone out / invalidate remembered unlocks:** change `salt` in `_config.yml`.
+- **Turn the lock off:** delete the `protect: kanji` line from `index.html` and push. The page is public again.
+- **Turn it on again:** add the line back (the secret must still exist).
+- **Test locally:** `KANJI_PASSWORD=choose-a-test-password JEKYLL_ENV=production bundle exec jekyll build`, then
+  serve `_site/`. Without `KANJI_PASSWORD` a non-production build uses the password `dev`.
+
+This is a light gate, not strong security: anyone who gets the password sees everything, and the encrypted page and
+the data files are public. The data files under `assets/kanji/data/` are not encrypted (they are public datasets).
+
+## Preview in Claude Code
+
+Claude Code's preview pane starts servers from `.claude/launch.json` in the folder it was opened in. To preview this
+site, add an entry like this (adjust the path to where you cloned the repo):
+
+```json
+{
+  "name": "kanji-site",
+  "runtimeExecutable": "python3",
+  "runtimeArgs": ["-m", "http.server", "4100", "--directory", "/home/USER/Documents/code/kanji-practice.github.io/_site"],
+  "port": 4100
+}
+```
+
+It serves the built `_site/` folder, so build first (`bundle exec jekyll build`, with `KANJI_PASSWORD` set while the
+lock is on). Then ask Claude Code to start `kanji-site`, or open <http://localhost:4100> yourself after running the
+`python3 -m http.server 4100 --directory _site` command. Rebuild and reload to see changes. The live site is
+<https://kanji-practice.github.io>.
