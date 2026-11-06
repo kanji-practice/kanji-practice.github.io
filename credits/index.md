@@ -15,7 +15,7 @@ Full declaration: [LICENSES.txt](/assets/kanji/LICENSES.txt){:download=""}.
 |---|---|---|---|
 | [KanjiVG](https://kanjivg.tagaini.net/) | stroke shapes and order, components | © Ulrich Apel | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | meanings, readings, grade, frequency | © [EDRDG](https://www.edrdg.org/) | [EDRDG licence](https://www.edrdg.org/edrdg/licence.html), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
-| [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) | example words | © [EDRDG](https://www.edrdg.org/) | [EDRDG licence](https://www.edrdg.org/edrdg/licence.html), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+| [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) | example words, German meanings | © [EDRDG](https://www.edrdg.org/) | [EDRDG licence](https://www.edrdg.org/edrdg/licence.html), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | [OpenJLPT](https://github.com/evanclan/OpenJLPT) | JLPT N5–N1 levels (community estimates, based on [Jonathan Waller's lists](https://www.tanos.co.uk/jlpt/)) | OpenJLPT contributors | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | [Noto Sans JP](https://fonts.google.com/noto/specimen/Noto+Sans+JP) | Japanese font | Google | [SIL OFL 1.1](https://openfontlicense.org/) |
 

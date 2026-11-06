@@ -23,7 +23,7 @@ The JSON in `assets/kanji/data/` is generated (standard-library Python only) fro
 
 ```bash
 git submodule update --init      # KanjiVG, OpenJLPT
-scripts/fetch_sources.sh         # KANJIDIC2, JMdict (EDRDG, not git repositories)
+scripts/fetch_sources.sh         # KANJIDIC2, JMdict with English and German glosses (EDRDG, not git repositories)
 python3 scripts/build_data.py
 ```
 

@@ -8,4 +8,5 @@ Gemfile.lock
 
 # raw dictionaries downloaded by scripts/fetch_sources.sh (the two submodules are tracked)
 sources/kanjidic2.xml.gz
+sources/JMdict.gz
 sources/JMdict_e.gz

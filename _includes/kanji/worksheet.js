@@ -12,6 +12,8 @@ var Worksheet = (function () {
   var TITLE_INK = 'rgb(31,59,94)';
   var PAD = 5 * MM, MIN_PANEL = 86 * MM, PRACTICE_COLS = 13, LINE = 16;
   var ON_COLOR = ['rgb(252,232,194)', 'rgb(128,74,5)'], KUN_COLOR = ['rgb(209,240,227)', 'rgb(18,89,64)'];
+  var EN_COLOR = ['rgb(214,230,250)', 'rgb(22,62,122)'], DE_COLOR = ['rgb(236,222,248)', 'rgb(88,40,128)'];
+  var LANG_COLOR = { EN: EN_COLOR, DE: DE_COLOR };
   var ON_TAG = 'ON 音 katakana', KUN_TAG = 'KUN 訓 hiragana';
 
   var ctx = document.createElement('canvas').getContext('2d');
@@ -135,12 +137,26 @@ var Worksheet = (function () {
     return y - LINE - 1 * MM;
   }
 
+  /* One row per language: a small EN / DE pill, then the meanings on a single line (smaller, then cut with …).
+     rows: [['EN', text], ['DE', text]]. The text starts where the readings below start. Returns the y below. */
+  function meaningRows(c, x, y, w, rows) {
+    var pw = pillWidth([ON_TAG, KUN_TAG]) + 2 * MM, tx = x + pw, room = w - pw;
+    rows.forEach(function (r) {
+      pill(c, x, y, r[0], LANG_COLOR[r[0]] || EN_COLOR, 7.5, pillWidth(['EN', 'DE']));
+      var size = 12, text = r[1] || '-';
+      while (size > 8.5 && textWidth(text, size) > room) size -= 0.5;
+      c.text(tx, y, short(text, size, room), size, '#000');
+      y -= LINE + 1 * MM;
+    });
+    return y;
+  }
+
   /* Meaning, ON and KUN readings, meta line: the same block in every header. Returns y below. */
   function infoBlock(c, info, tx, tw, y, nStrokes) {
     label(c, tx, y, 'Meaning');
     y -= 6.5 * MM;
-    wrap(info.meanings.join(', ') || '-', 12, tw).forEach(function (line) { c.text(tx, y, line, 12, '#000'); y -= LINE; });
-    y -= 2 * MM;
+    y = meaningRows(c, tx, y, tw, info.rows || [['EN', info.meanings.join(', ') || '-']]);
+    y -= 1 * MM;
     y = readingsLine(c, tx, y, tw, ON_TAG, ON_COLOR, info.on);
     y = readingsLine(c, tx, y, tw, KUN_TAG, KUN_COLOR, info.kun);
     var meta = [(nStrokes || info.strokes) + ' strokes'];
@@ -157,17 +173,29 @@ var Worksheet = (function () {
     y -= 4.5 * MM;
     label(c, x0, y, 'Example words');
     y -= 6 * MM;
-    var colW = iw / 2, shown = words.slice(0, limit || 6);
-    shown.forEach(function (w, i) {
-      var wx = x0 + (i % 2) * colW, wy = y - Math.floor(i / 2) * 5.5 * MM;
-      var head = w[0] + '  ' + w[1], rom = '(' + Romaji.romaji(w[1]) + ')';
-      c.text(wx, wy, head, 10, '#000');
-      var gx = wx + textWidth(head, 10) + 1.5 * MM;
-      c.text(gx, wy, rom, 8, DARK);
-      gx += textWidth(rom, 8) + 2 * MM;
-      c.text(gx, wy, short(w[2], 8.5, wx + colW - 3 * MM - gx), 8.5, DARK);
+    var colW = iw / 2, shown = words.slice(0, limit || 6), ONE = 5.5 * MM, TWO = 9.2 * MM;
+    /* English and German on one line when both fit, else the German one on a second line */
+    var cells = shown.map(function (w, i) {
+      var wx = x0 + (i % 2) * colW, head = w[0] + '  ' + w[1], rom = '(' + Romaji.romaji(w[1]) + ')';
+      var gx = wx + textWidth(head, 10) + 1.5 * MM + textWidth(rom, 8) + 2 * MM, room = wx + colW - 3 * MM - gx;
+      var parts = [w[2], w[3]].filter(Boolean), joined = parts.join(' / ');
+      var two = parts.length === 2 && textWidth(joined, 8.5) > room;
+      return { w: w, wx: wx, head: head, rom: rom, gx: gx, room: room, lines: two ? parts : [joined] };
     });
-    return y - Math.ceil(shown.length / 2) * 5.5 * MM + 2 * MM;
+    var rows = Math.ceil(cells.length / 2), heights = [];
+    for (var r = 0; r < rows; r++) {
+      heights.push(cells.slice(2 * r, 2 * r + 2).some(function (cell) { return cell.lines.length > 1; }) ? TWO : ONE);
+    }
+    var top = y;
+    cells.forEach(function (cell, i) {
+      var wy = top - heights.slice(0, Math.floor(i / 2)).reduce(function (a, h) { return a + h; }, 0);
+      c.text(cell.wx, wy, cell.head, 10, '#000');
+      c.text(cell.wx + textWidth(cell.head, 10) + 1.5 * MM, wy, cell.rom, 8, DARK);
+      cell.lines.forEach(function (line, j) {
+        c.text(cell.gx, wy - j * 3.7 * MM, short(line, 8.5, cell.room), 8.5, DARK);
+      });
+    });
+    return y - heights.reduce(function (a, h) { return a + h; }, 0) + 2 * MM;
   }
 
   /* Rounded panel behind whatever render(c) draws from y_top - PAD down; returns the y below it. */
@@ -302,7 +330,7 @@ var Worksheet = (function () {
       y -= LINE + 2 * MM;
       label(cv, tx, y, 'Meaning');
       y -= 6.5 * MM;
-      wrap(entry.gloss, 12, tw).slice(0, 3).forEach(function (line) { cv.text(tx, y, line, 12, '#000'); y -= LINE; });
+      y = meaningRows(cv, tx, y, tw, entry.rows || [['EN', entry.gloss]]);
       y = Math.min(y, ytop - gsize - 4 * MM) - 3 * MM;
 
       cv.line(x0, y + 2 * MM, x0 + iw, y + 2 * MM, { stroke: PANEL_EDGE, lw: 0.4 });
@@ -401,7 +429,7 @@ var Worksheet = (function () {
           if (ex) {
             c.text(tx, ty, short(ex[0] + '  ' + ex[1], 9, tw), 9, '#000');
             ty -= 3.6 * MM;
-            c.text(tx, ty, short(Romaji.romaji(ex[1]) + ' – ' + ex[2], 7, tw), 7, DARK);
+            c.text(tx, ty, short(Romaji.romaji(ex[1]) + ' – ' + [ex[2], ex[3]].filter(Boolean).join(' / '), 7, tw), 7, DARK);
           }
           var meta = k.strokes + ' strokes' + (k.grade > 0 && k.grade < 7 ? ' · grade ' + k.grade : '');
           c.text(tx, y0 + 2.2 * MM, meta, 6.5, DARK);

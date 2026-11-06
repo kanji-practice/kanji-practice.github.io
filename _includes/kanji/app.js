@@ -16,13 +16,59 @@
     });
   }
 
+  /* ---------- language ---------- */
+  /* Searching always looks at English and German. The two checkboxes choose which meanings are shown on the
+     sheets (one or both). German comes from JMdict and does not cover everything, so a kanji or word without a
+     German meaning shows its English one. */
+  var langs = { en: true, de: true };
+  try {
+    var saved = JSON.parse(localStorage.getItem('kanji-langs'));
+    if (saved && (saved.en || saved.de)) langs = { en: !!saved.en, de: !!saved.de };
+  } catch (e) {}
+  function fold(s) {  // lower case, no accents: Über -> uber, Straße -> strasse
+    return String(s).toLowerCase().replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  /* English and German meanings of a kanji, alternating (castle, Burg, …) when both are on */
+  function meaningsOf(k) {
+    var en = langs.en ? k.en : [], de = langs.de ? k.de : [], out = [], seen = {};
+    for (var i = 0; i < Math.max(en.length, de.length); i++) {
+      [en[i], de[i]].forEach(function (m) {
+        if (m && !seen[m.toLowerCase()]) { seen[m.toLowerCase()] = true; out.push(m); }
+      });
+    }
+    return out.length ? out : k.en;
+  }
+  function pick(en, de) {  // a gloss for the sheets from an English and a German one ('' when missing)
+    var parts = [langs.en ? en : '', langs.de ? de : ''].filter(Boolean);
+    return parts.length ? parts.join(' / ') : en;
+  }
+  function glossOf(w) { return pick(w.en, w.de); }
+  /* [English, German] to show; a language that is off or missing is '' (English when nothing is left) */
+  function glossPair(en, de) {
+    var e = langs.en ? en : '', d = langs.de ? de : '';
+    return e || d ? [e, d] : [en, ''];
+  }
+  /* rows [['EN', text], ['DE', text]] of the meaning block on the sheets */
+  function rowsOf(en, de) {
+    var g = glossPair(en, de), rows = [];
+    if (g[0]) rows.push(['EN', g[0]]);
+    if (g[1]) rows.push(['DE', g[1]]);
+    return rows.length ? rows : [['EN', '-']];
+  }
+  function applyLang() {
+    kanji.forEach(function (k) { k.meanings = meaningsOf(k); k.rows = rowsOf(k.en.join(', '), k.de.join(', ')); });
+    if (vocabList) vocabList.forEach(function (w) { w.gloss = glossOf(w); w.rows = rowsOf(w.en, w.de); });
+  }
+
   /* ---------- data ---------- */
-  var kanji = [], byChar = {}, shards = {}, components = null;
+  var kanji = [], byChar = {}, shards = {}, components = null, vocabList = null;
   var ready = getJSON('kanji.json').then(function (rows) {
     kanji = rows.map(function (r) {
-      return { char: r[0], meanings: r[1], on: r[2], kun: r[3], strokes: r[4], grade: r[5], jlpt: r[6], freq: r[7], level: r[8] };
+      return { char: r[0], en: r[1], de: r[9] || [], meanings: r[1], on: r[2], kun: r[3], strokes: r[4], grade: r[5],
+        jlpt: r[6], freq: r[7], level: r[8] };
     });
     kanji.forEach(function (k) { byChar[k.char] = k; });
+    applyLang();
   });
 
   function shardKey(ch) { return ('0000' + (ch.codePointAt(0) >> 5).toString(16)).slice(-4); }
@@ -37,7 +83,7 @@
       var out = {};
       return Promise.all(chars.map(function (c) {
         return shards[shardKey(c)].then(function (s) {
-          if (s[c]) out[c] = { strokes: s[c][0], size: 109, words: s[c][1] };
+          if (s[c]) out[c] = { strokes: s[c][0], size: 109, words: s[c][1].map(function (w) { var g = glossPair(w[2], w[3] || ''); return [w[0], w[1], g[0], g[1]]; }) };
         });
       })).then(function () { return out; });
     });
@@ -52,11 +98,14 @@
     if (!vocab) vocab = getJSON('words.json').then(function (rows) {
       var v = { list: [], byWord: {}, byReading: {} };
       rows.forEach(function (r) {
-        var w = { word: r[0], reading: r[1], gloss: r[2], rank: r[3] };
+        var w = { word: r[0], reading: r[1], en: r[2], de: r[4] || '', gloss: glossOf({ en: r[2], de: r[4] || '' }), rank: r[3],
+          deFolded: r[4] ? fold(r[4]) : '' };
+        w.rows = rowsOf(w.en, w.de);
         v.list.push(w);
         v.byWord[w.word] = w;
         (v.byReading[w.reading] = v.byReading[w.reading] || []).push(w);
       });
+      vocabList = v.list;
       return v;
     });
     return vocab;
@@ -79,9 +128,10 @@
       return { exact: true, items: chars.filter(function (c) { return !seen[c] && (seen[c] = true); }) };
     }
     var kana = KANA.test(q) ? Romaji.toHiragana(q.replace(/[\s・.-]/g, '')) : null;
-    var lower = q.toLowerCase();
+    var lowerEn = q.toLowerCase(), lowerDe = fold(q);
     var asKana = !kana && /^[a-zāīūēō' -]+$/i.test(q) ? Romaji.toKana(q.replace(/\s/g, '')) : null;
-    var re = new RegExp('\\b' + lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+    function wordRe(t) { return new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b'); }
+    var reEn = wordRe(lowerEn), reDe = wordRe(lowerDe);
     var hits = [];
     kanji.forEach(function (k) {
       var score = null;
@@ -93,11 +143,13 @@
         else if (kun.some(function (r) { return r.split('.')[0] === reading; })) score = 1.5;  // stem: かわ of かわ.る
       }
       if (!kana) {
-        k.meanings.some(function (m) {
-          m = m.toLowerCase();
-          var s = m === lower ? 0 : re.test(m) ? 2 : m.indexOf(lower) >= 0 && lower.length > 2 ? 3 : null;
-          if (s != null && (score == null || s < score)) score = s;
-          return s === 0;
+        [[k.en, lowerEn, reEn, false], [k.de, lowerDe, reDe, true]].forEach(function (t) {
+          t[0].some(function (m, i) {
+            m = t[3] ? fold(m) : m.toLowerCase();
+            var s = m === t[1] ? (t[3] && i ? 0.5 : 0) : t[2].test(m) ? 2 : m.indexOf(t[1]) >= 0 && t[1].length > 2 ? 3 : null;
+            if (s != null && (score == null || s < score)) score = s;
+            return s === 0;
+          });
         });
       }
       if (score != null) hits.push([score, rankFreq(k), k.char]);
@@ -129,12 +181,20 @@
       [compact, compact.toLowerCase().replace(/ny/g, "n'y")].forEach(function (form) {
         (v.byReading[Romaji.toKana(form)] || []).forEach(add);
       });
-      var lower = q.toLowerCase(), re = new RegExp('(^|; |\\b)' + lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+    }
+    if (/^[a-zäöüßāīūēō' -]+$/i.test(q)) {
+      var tests = [[q.toLowerCase(), false], [fold(q), true]].map(function (t) {
+        return { lower: t[0], de: t[1], re: new RegExp('(^|; |\\b)' + t[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b') };
+      });
       var exact = [], loose = [];
       v.list.forEach(function (w) {
-        var g = w.gloss.toLowerCase();
-        if (g.split('; ').indexOf(lower) >= 0 || g.split('; ').indexOf('to ' + lower) >= 0) exact.push(w);
-        else if (lower.length > 2 && re.test(g)) loose.push(w);
+        var isExact = false, isLoose = false;
+        tests.forEach(function (t) {
+          var g = t.de ? w.deFolded : w.en.toLowerCase(), parts = g.split('; ');
+          if (parts.indexOf(t.lower) >= 0 || parts.indexOf('to ' + t.lower) >= 0) isExact = true;
+          else if (t.lower.length > 2 && t.re.test(g)) isLoose = true;
+        });
+        if (isExact) exact.push(w); else if (isLoose) loose.push(w);
       });
       exact.concat(loose).forEach(function (w) { if (out.length < 12) add(w); });
     }
@@ -197,11 +257,17 @@
     if (k.grade && k.grade <= 6) return '<span class="kj-badge">G' + k.grade + '</span>';
     return '';
   }
+  /* search results: one row per language, with the same EN / DE pills as the sheets */
+  function langRows(cls, en, de) {
+    return [['en', en], ['de', de]].filter(function (r) { return r[1]; }).map(function (r) {
+      return '<span class="' + cls + '"><i class="kj-lg kj-lg--' + r[0] + '">' + r[0].toUpperCase() + '</i>' + esc(r[1]) + '</span>';
+    }).join('');
+  }
   function tile(ch, extra) {
     var k = byChar[ch];
     return '<button type="button" class="kj-tile" data-char="' + esc(ch) + '"' + (extra || '') + '>' +
       '<span class="kj-tile__char" lang="ja">' + esc(ch) + '</span>' +
-      '<span class="kj-tile__meaning">' + esc(k ? (k.meanings[0] || '–') : 'component') + '</span>' +
+      (k ? langRows('kj-tile__meaning', k.en[0], k.de[0]) || '<span class="kj-tile__meaning">–</span>' : '<span class="kj-tile__meaning">component</span>') +
       (k ? badge(k) : '') + '</button>';
   }
   function status(el, text) { el.textContent = text || ''; }
@@ -228,7 +294,7 @@
     return '<button type="button" class="kj-word" data-word="' + esc(w.word) + '">' +
       '<span class="kj-word__text" lang="ja">' + esc(w.word) + '</span>' +
       '<span class="kj-word__reading" lang="ja">' + esc(w.reading) + ' · ' + esc(Romaji.romaji(w.reading)) + '</span>' +
-      '<span class="kj-word__gloss">' + esc(w.gloss.split('; ')[0]) + '</span></button>';
+      langRows('kj-word__gloss', w.en.split('; ')[0], w.de.split('; ')[0]) + '</button>';
   }
 
   function runSearch() {
@@ -258,6 +324,23 @@
   var timer;
   input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(runSearch, 200); });
   $('#kj-search').addEventListener('submit', function (e) { e.preventDefault(); clearTimeout(timer); runSearch(); });
+  /* which meanings go on the sheets: English, German or both, never neither */
+  var langBoxes = { en: $('#kj-lang-en'), de: $('#kj-lang-de') };
+  function syncLangs() {
+    langBoxes.en.checked = langs.en;
+    langBoxes.de.checked = langs.de;
+  }
+  syncLangs();
+  ['en', 'de'].forEach(function (l) {
+    langBoxes[l].addEventListener('change', function () {
+      langs[l] = langBoxes[l].checked;
+      if (!langs.en && !langs.de) langs[l] = true;
+      syncLangs();
+      try { localStorage.setItem('kanji-langs', JSON.stringify(langs)); } catch (e) {}
+      applyLang();
+      reselect();
+    });
+  });
   $$('[data-example]').forEach(function (b) {
     b.addEventListener('click', function () { input.value = b.getAttribute('data-example'); runSearch(); });
   });
@@ -279,7 +362,7 @@
   /* entry for Worksheet.wordPage, from a word and the glyphs of its kanji */
   function wordEntry(w, g) {
     var chars = kanjiOf(w.word);
-    return { word: w.word, reading: w.reading, gloss: w.gloss, glyphs: chars.map(function (c) { return g[c]; }),
+    return { word: w.word, reading: w.reading, gloss: w.gloss, rows: w.rows, glyphs: chars.map(function (c) { return g[c]; }),
       infos: chars.filter(function (c, i) { return byChar[c] && chars.indexOf(c) === i; }).map(function (c) { return byChar[c]; }) };
   }
   function entryText(e) {
