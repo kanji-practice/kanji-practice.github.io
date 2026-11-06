@@ -257,10 +257,10 @@
     if (k.grade && k.grade <= 6) return '<span class="kj-badge">G' + k.grade + '</span>';
     return '';
   }
-  /* search results: one row per language, with the same EN / DE pills as the sheets */
+  /* search results: one row per language (English, then German) */
   function langRows(cls, en, de) {
     return [['en', en], ['de', de]].filter(function (r) { return r[1]; }).map(function (r) {
-      return '<span class="' + cls + '"><i class="kj-lg kj-lg--' + r[0] + '">' + r[0].toUpperCase() + '</i>' + esc(r[1]) + '</span>';
+      return '<span class="' + cls + '">' + esc(r[1]) + '</span>';
     }).join('');
   }
   function tile(ch, extra) {
