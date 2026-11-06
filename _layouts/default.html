@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.title and page.title != "" %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ site.description }}">
+    <script>
+      /* Apply the saved (or system) color theme before first paint to avoid a flash. */
+      (function () {
+        var theme;
+        try { theme = localStorage.getItem('theme'); } catch (e) {}
+        if (theme !== 'dark' && theme !== 'light') {
+          theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+    <link rel="stylesheet" href="/assets/css/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="site-header__title" href="/">{{ site.title }}</a>
+      <button type="button" id="theme-toggle" class="site-header__theme" aria-label="Toggle dark mode" title="Toggle dark mode">&#9680;</button>
+    </header>
+
+    <main class="page">
+      {{ content }}
+    </main>
+
+    <footer class="site-footer">
+      {% if page.kanji_credits %}
+      <p>Kanji data: KanjiVG, KANJIDIC2, JMdict, OpenJLPT (CC BY-SA) · <a href="/credits/">Full credits</a></p>
+      {% endif %}
+      <p>Code under the <a href="https://github.com/kanji-practice/kanji-practice.github.io/blob/main/LICENSE">MIT licence</a> ·
+        <a href="https://github.com/kanji-practice/kanji-practice.github.io">Source</a></p>
+    </footer>
+
+    {% if site.site_lock.checks_json %}
+    <script>
+      window.SITE_LOCK = { salt: "{{ site.site_lock.salt }}", iterations: {{ site.site_lock.iterations }}, checks: {{ site.site_lock.checks_json }} };
+    </script>
+    <script src="/assets/js/site-lock.js"></script>
+    {% endif %}
+
+    <script>
+      /* Day/night toggle; the initial theme is set in <head>. */
+      (function () {
+        var root = document.documentElement;
+        var toggle = document.getElementById('theme-toggle');
+        toggle.addEventListener('click', function () {
+          var theme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', theme);
+          try { localStorage.setItem('theme', theme); } catch (err) {}
+        });
+      })();
+    </script>
+  </body>
+</html>

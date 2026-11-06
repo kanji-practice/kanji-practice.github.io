@@ -1,0 +1,280 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap">
+
+<style>
+  #kanji-app {
+    --kj-ink: #26385f; --kj-accent: #26385f; --kj-text: #3d4144; --kj-muted: #7a8288; --kj-surface: #f7f8f9;
+    --kj-card: #ffffff; --kj-border: #dde1e4; --kj-hover: #eef1f5; --kj-on: #fce8c2; --kj-on-ink: #804a05;
+    --kj-kun: #d1f0e3; --kj-kun-ink: #125940; --kj-red: #d91a1a;
+    color: var(--kj-text); margin-bottom: 2em;
+  }
+  html[data-theme="dark"] #kanji-app {
+    --kj-ink: #eceef0; --kj-accent: #8fb3f0; --kj-text: #d0d3d6; --kj-muted: #9aa1a7; --kj-surface: #24272a;
+    --kj-card: #2b2f33; --kj-border: #3a3e42; --kj-hover: #33383d; --kj-on: #4a3a1c; --kj-on-ink: #f5d9a3;
+    --kj-kun: #1d4034; --kj-kun-ink: #a8e6cc; --kj-red: #ff6b6b;
+  }
+  #kanji-app [lang="ja"], #kanji-app .kj-jp { font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif; }
+  .kj-hero { display: flex; align-items: center; gap: 1.1em; margin: 0.5em 0 1.4em; }
+  .kj-hero__mark { flex: none; width: 3.2em; height: 3.2em; border-radius: 0.6em; display: grid; place-items: center;
+    background: var(--kj-accent); color: #fff; font-size: 1.3em; }
+  html[data-theme="dark"] .kj-hero__mark { color: #1a1c1e; }
+  .kj-hero h1 { margin: 0; font-size: 1.6em; color: var(--kj-ink); }
+  .kj-hero p { margin: 0.2em 0 0; font-size: 0.8em; color: var(--kj-muted); }
+
+  #kanji-app [hidden] { display: none !important; }
+  .kj-tabs { display: flex; gap: 0.3em; border-bottom: 1px solid var(--kj-border); margin-bottom: 1.2em; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  .kj-tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.55em 0.9em; font: inherit;
+    font-size: 0.85em; color: var(--kj-muted); cursor: pointer; white-space: nowrap; margin-bottom: -1px; }
+  .kj-tab:hover { color: var(--kj-ink); }
+  .kj-tab.is-active { color: var(--kj-ink); border-bottom-color: var(--kj-accent); font-weight: 700; }
+  .kj-tab small { font-weight: 400; color: var(--kj-muted); margin-left: 0.3em; }
+  @media (max-width: 499px) { .kj-tab small, .kj-hint .kj-wide { display: none; } }
+
+  .kj-search { display: flex; gap: 0.5em; }
+  .kj-search input, .kj-field input, .kj-field select {
+    font: inherit; font-size: 0.9em; padding: 0.6em 0.8em; border: 1px solid var(--kj-border); border-radius: 0.5em;
+    background: var(--kj-card); color: var(--kj-text); margin: 0; box-shadow: none; width: 100%; }
+  .kj-search input { font-size: 1.05em; }
+  .kj-search input:focus, .kj-field input:focus, .kj-field select:focus { outline: 2px solid var(--kj-accent); outline-offset: 0; border-color: transparent; }
+  .kj-hint { font-size: 0.72em; color: var(--kj-muted); margin: 0.6em 0 0; display: flex; flex-wrap: wrap; gap: 0.35em; align-items: center; }
+  .kj-hint button { font: inherit; background: var(--kj-surface); border: 1px solid var(--kj-border); color: var(--kj-text);
+    border-radius: 1em; padding: 0.1em 0.7em; cursor: pointer; }
+  .kj-hint button:hover { background: var(--kj-hover); }
+  .kj-note, .kj-loading { font-size: 0.8em; color: var(--kj-muted); margin: 0.8em 0; }
+  .kj-error { color: var(--kj-red); font-size: 0.85em; }
+
+  .kj-btn { display: inline-flex; align-items: center; gap: 0.45em; font: inherit; font-size: 0.8em; padding: 0.55em 1em;
+    border-radius: 0.5em; border: 1px solid var(--kj-border); background: var(--kj-card); color: var(--kj-text); cursor: pointer; }
+  .kj-btn:hover:not(:disabled) { background: var(--kj-hover); }
+  .kj-btn:disabled { opacity: 0.55; cursor: default; }
+  .kj-btn--primary { background: var(--kj-accent); border-color: var(--kj-accent); color: #fff; font-weight: 700; }
+  .kj-btn--primary:hover:not(:disabled) { background: var(--kj-accent); filter: brightness(1.15); }
+  html[data-theme="dark"] .kj-btn--primary { color: #1a1c1e; }
+  .kj-icon { width: 1.15em; height: 1.15em; }
+  .kj-actions { display: flex; flex-wrap: wrap; gap: 0.5em; margin: 1em 0 0.5em; }
+
+  .kj-heading { font-size: 0.72em; font-weight: 700; color: var(--kj-muted); text-transform: uppercase; letter-spacing: 0.06em;
+    margin: 1.2em 0 0.5em; border: 0; }
+  .kj-words { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5em, 1fr)); gap: 0.5em; }
+  .kj-word { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1em; padding: 0.5em 0.75em; min-width: 0;
+    border: 1px solid var(--kj-border); border-radius: 0.6em; background: var(--kj-card); color: var(--kj-text); cursor: pointer; font: inherit; text-align: left; }
+  .kj-word:hover { background: var(--kj-hover); }
+  .kj-word.is-selected { border-color: var(--kj-accent); box-shadow: 0 0 0 1px var(--kj-accent); }
+  .kj-word__text { font-size: 1.35em; line-height: 1.3; color: var(--kj-ink); }
+  .kj-word__reading, .kj-word__gloss { font-size: 0.62em; color: var(--kj-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kj-word__gloss { color: var(--kj-text); }
+  .kj-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.4em, 1fr)); gap: 0.5em; margin: 1em 0; }
+  .kj-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.15em; padding: 0.55em 0.3em 0.45em;
+    border: 1px solid var(--kj-border); border-radius: 0.6em; background: var(--kj-card); color: var(--kj-text); cursor: pointer; font: inherit; min-width: 0; }
+  .kj-tile:hover { background: var(--kj-hover); }
+  .kj-tile.is-selected { border-color: var(--kj-accent); box-shadow: 0 0 0 1px var(--kj-accent); }
+  .kj-tile__char { font-size: 1.9em; line-height: 1.2; color: var(--kj-ink); }
+  .kj-tile__meaning { font-size: 0.6em; color: var(--kj-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kj-badge { position: absolute; top: 0.35em; right: 0.35em; font-size: 0.5em; padding: 0.05em 0.4em; border-radius: 0.6em;
+    background: var(--kj-kun); color: var(--kj-kun-ink); }
+  .kj-badge--n { background: var(--kj-on); color: var(--kj-on-ink); }
+
+  .kj-detail { margin-top: 1.2em; }
+  .kj-sheet { border-radius: 0.8em; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 6px 20px rgba(0,0,0,.06); background: #fff; }
+  .kj-sheet svg, .kj-sheet .ws-page { display: block; width: 100%; height: auto; aspect-ratio: auto; box-shadow: none; }
+  .kj-detail__comp { display: flex; gap: 1em; align-items: center; padding: 1em; border: 1px solid var(--kj-border); border-radius: 0.8em; background: var(--kj-surface); }
+  .kj-detail__comp > span { font-size: 4em; line-height: 1; color: var(--kj-ink); }
+  .kj-detail__comp p { margin: 0.2em 0 0; font-size: 0.85em; }
+  .kj-parts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35em; margin-top: 0.9em; font-size: 0.8em; color: var(--kj-muted); }
+  .kj-parts > span { margin-right: 0.3em; }
+  .kj-chip { display: inline-flex; align-items: center; gap: 0.2em; font: inherit; font-size: 1.05em; padding: 0.1em 0.6em; border-radius: 1em;
+    border: 1px solid var(--kj-border); background: var(--kj-card); color: var(--kj-ink); cursor: pointer; }
+  .kj-chip:hover { background: var(--kj-hover); }
+  .kj-chip--removable { cursor: default; padding-right: 0.25em; }
+  .kj-chip--removable button { border: 0; background: none; color: var(--kj-muted); cursor: pointer; font-size: 0.9em; padding: 0 0.3em; }
+  .kj-chip--removable button:hover { color: var(--kj-red); }
+
+  .kj-list { position: sticky; bottom: 0.8em; z-index: 5; margin-top: 1.4em; padding: 0.7em 0.9em; border: 1px solid var(--kj-border);
+    border-radius: 0.8em; background: var(--kj-card); box-shadow: 0 4px 18px rgba(0,0,0,.12); }
+  .kj-list__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5em; }
+  .kj-list__head strong { font-size: 0.85em; color: var(--kj-ink); }
+  .kj-list__head span { font-size: 0.75em; color: var(--kj-muted); margin-left: 0.4em; }
+  .kj-list__chars { display: flex; flex-wrap: wrap; gap: 0.3em; margin-top: 0.5em; }
+  .kj-list .kj-actions { margin: 0; }
+
+  .kj-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11em, 1fr)); gap: 0.8em; }
+  .kj-field label { display: block; font-size: 0.72em; font-weight: 700; color: var(--kj-ink); margin-bottom: 0.3em; }
+  .kj-field small { display: block; font-size: 0.65em; color: var(--kj-muted); margin-top: 0.3em; }
+  .kj-presets { display: flex; flex-wrap: wrap; gap: 0.35em; margin: 0 0 1em; }
+  .kj-summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6em; margin: 1.2em 0 0.6em; }
+  .kj-summary p { margin: 0; font-size: 0.85em; color: var(--kj-ink); font-weight: 700; }
+  .kj-range { display: flex; align-items: center; gap: 0.4em; font-size: 0.75em; color: var(--kj-muted); }
+  .kj-range input { width: 5em; font: inherit; padding: 0.3em 0.5em; border: 1px solid var(--kj-border); border-radius: 0.4em; background: var(--kj-card); color: var(--kj-text); margin: 0; }
+  .kj-strip { display: flex; flex-wrap: wrap; gap: 0.25em; max-height: 11em; overflow-y: auto; padding: 0.6em; border: 1px solid var(--kj-border);
+    border-radius: 0.6em; background: var(--kj-surface); }
+  .kj-mini { font: inherit; font-size: 1.15em; width: 1.9em; height: 1.9em; border-radius: 0.3em; border: 0; background: var(--kj-card);
+    color: var(--kj-ink); cursor: pointer; padding: 0; }
+  .kj-mini:hover { background: var(--kj-hover); }
+  .kj-more { align-self: center; font-size: 0.7em; color: var(--kj-muted); padding: 0 0.5em; }
+
+  .kj-checks { display: flex; flex-wrap: wrap; gap: 0.4em 1.4em; margin: 0.8em 0 0; font-size: 0.8em; }
+  .kj-checks label { display: inline-flex; align-items: center; gap: 0.4em; cursor: pointer; }
+  .kj-checks input { margin: 0; accent-color: var(--kj-accent); }
+  .kj-family-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.2em, 1fr)); gap: 0.5em; margin-top: 1em; }
+  .kj-fam { display: flex; flex-direction: column; align-items: center; gap: 0.2em; padding: 0.45em 0.3em; border: 1px solid var(--kj-border);
+    border-radius: 0.6em; background: var(--kj-card); color: var(--kj-ink); cursor: pointer; font: inherit; min-width: 0; }
+  .kj-fam:hover { background: var(--kj-hover); }
+  .kj-fam__glyph { width: 3em; height: 3em; }
+  .kj-fam__glyph path[stroke="rgb(217,26,26)"] { stroke: var(--kj-red); }
+  .kj-fam__meaning { font-size: 0.58em; color: var(--kj-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
+  /* preview overlay and print */
+  body.ws-open { overflow: hidden; }
+  .ws-overlay { position: fixed; inset: 0; z-index: 100; overflow-y: auto; background: rgba(30, 33, 36, 0.92); padding: 0 1em 2em; }
+  .ws-overlay__bar { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: 0.6em; padding: 0.8em 0; background: rgba(30, 33, 36, 0.96); color: #eceef0; font-size: 0.85em; }
+  .ws-overlay__status { color: #9aa1a7; margin-left: 0.5em; }
+  .ws-overlay__actions { display: flex; gap: 0.5em; }
+  .ws-overlay .kj-btn { font-size: 0.95em; background: #2b2f33; border-color: #3a3e42; color: #eceef0; }
+  .ws-overlay .kj-btn--primary { background: #8fb3f0; border-color: #8fb3f0; color: #1a1c1e; }
+  .ws-overlay__hint { color: #9aa1a7; font-size: 0.72em; margin: 0 0 1em; }
+  .ws-pages { display: flex; flex-direction: column; align-items: center; gap: 1.2em; }
+  .ws-page { display: block; width: min(100%, 210mm); height: auto; aspect-ratio: 210 / 297; background: #fff;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4); content-visibility: auto; contain-intrinsic-size: 794px 1123px; }
+
+  @media print {
+    @page { size: A4; margin: 0; }
+    body.ws-open > *:not(#ws-overlay) { display: none !important; }
+    body.ws-open { overflow: visible; background: #fff !important; margin: 0; padding: 0; }
+    html[data-theme] body.ws-open { background: #fff !important; }
+    .ws-overlay { position: static; overflow: visible; background: none; padding: 0; }
+    .ws-overlay__bar, .ws-overlay__hint { display: none; }
+    .ws-pages { display: block; }
+    .ws-page { width: 210mm; height: 297mm; box-shadow: none; content-visibility: visible; break-after: page; page-break-after: always; }
+    .ws-page:last-child { break-after: auto; page-break-after: auto; }
+  }
+</style>
+
+<div id="kanji-app" data-protected-page>
+  <div class="kj-hero">
+    <div class="kj-hero__mark kj-jp" aria-hidden="true">漢</div>
+    <div>
+      <h1>Kanji worksheets</h1>
+      <p>Printable A4 practice sheets: readings, example words, stroke order and a fading practice grid.</p>
+    </div>
+  </div>
+
+  <div class="kj-tabs" role="tablist">
+    <button type="button" class="kj-tab is-active" role="tab" aria-selected="true" data-tab="search">Search</button>
+    <button type="button" class="kj-tab" role="tab" aria-selected="false" data-tab="bundles">Bundles <small>JLPT · grade · frequency</small></button>
+    <button type="button" class="kj-tab" role="tab" aria-selected="false" data-tab="family">Families <small>shared components</small></button>
+  </div>
+
+  <section class="kj-panel" data-panel="search">
+    <form class="kj-search" id="kj-search" role="search">
+      <input id="kj-q" type="search" autocomplete="off" spellcheck="false" placeholder="Kanji, word, reading or meaning — 城, 友達, tomodachi, castle"
+        aria-label="Search for a kanji or word">
+      <button type="submit" class="kj-btn kj-btn--primary">Search</button>
+    </form>
+    <p class="kj-hint">Try
+      <button type="button" data-example="城" lang="ja">城</button>
+      <button type="button" data-example="とも">とも</button>
+      <button type="button" data-example="kawa">kawa</button>
+      <button type="button" data-example="tree">tree</button>
+      <button type="button" data-example="日本語" lang="ja">日本語</button>
+      <button type="button" data-example="castle" class="kj-wide">castle</button>
+      <button type="button" data-example="tomodachi" class="kj-wide">tomodachi</button>
+    </p>
+    <p class="kj-note" id="kj-search-info" aria-live="polite"></p>
+    <div id="kj-words"></div>
+    <div id="kj-results"></div>
+    <div class="kj-detail" id="kj-detail" hidden></div>
+  </section>
+
+  <section class="kj-panel" data-panel="bundles" hidden>
+    <div class="kj-presets">
+      <button type="button" class="kj-chip" data-bundle='{"level":5}'>JLPT N5</button>
+      <button type="button" class="kj-chip" data-bundle='{"level":4}'>JLPT N4</button>
+      <button type="button" class="kj-chip" data-bundle='{"level":3}'>JLPT N3</button>
+      <button type="button" class="kj-chip" data-bundle='{"grade":1}'>Grade 1</button>
+      <button type="button" class="kj-chip" data-bundle='{"grade":2}'>Grade 2</button>
+      <button type="button" class="kj-chip" data-bundle='{"top":50}'>Top 50</button>
+      <button type="button" class="kj-chip" data-bundle='{"level":5,"grade":1}'>N5 ∩ grade 1</button>
+    </div>
+    <div class="kj-grid">
+      <div class="kj-field">
+        <label for="kj-b-level">JLPT level</label>
+        <select id="kj-b-level">
+          <option value="0">any</option><option value="5">N5</option><option value="4">N4</option>
+          <option value="3">N3</option><option value="2">N2</option><option value="1">N1</option>
+        </select>
+        <small>OpenJLPT / Waller lists</small>
+      </div>
+      <div class="kj-field">
+        <label for="kj-b-grade">School grade</label>
+        <select id="kj-b-grade">
+          <option value="0">any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="8">other jōyō</option>
+        </select>
+        <small>Kyōiku kanji, then jōyō</small>
+      </div>
+      <div class="kj-field">
+        <label for="kj-b-top">Most frequent</label>
+        <select id="kj-b-top">
+          <option value="0">any</option><option value="10">top 10</option><option value="30">top 30</option><option value="50">top 50</option>
+          <option value="100">top 100</option><option value="200">top 200</option><option value="500">top 500</option>
+          <option value="1000">top 1000</option><option value="2500">top 2500</option>
+        </select>
+        <small>newspaper frequency rank</small>
+      </div>
+    </div>
+    <div class="kj-summary">
+      <p id="kj-b-count">Choose at least one filter.</p>
+      <div class="kj-range" id="kj-b-range" hidden>
+        <span>kanji</span><input id="kj-b-from" type="number" min="1" value="1" aria-label="First kanji">
+        <span>to</span><input id="kj-b-to" type="number" min="1" value="150" aria-label="Last kanji">
+        <span>(up to 150 per run)</span>
+      </div>
+    </div>
+    <div class="kj-strip" id="kj-b-preview"></div>
+    <p class="kj-note">Filters combine: only kanji matching all of them. One page per kanji.</p>
+    <div class="kj-actions"><button type="button" class="kj-btn kj-btn--primary" id="kj-b-generate" disabled>Generate</button></div>
+  </section>
+
+  <section class="kj-panel" data-panel="family" hidden>
+    <form class="kj-search" id="kj-f-form">
+      <input id="kj-f-q" type="search" autocomplete="off" placeholder="A component or radical — 友, 氵, 言 …" aria-label="Component">
+      <button type="submit" class="kj-btn kj-btn--primary">Show family</button>
+    </form>
+    <p class="kj-hint">Common parts
+      <button type="button" data-component="氵" lang="ja">氵</button><button type="button" data-component="亻" lang="ja">亻</button>
+      <button type="button" data-component="扌" lang="ja">扌</button><button type="button" data-component="艹" lang="ja">艹</button>
+      <button type="button" data-component="木" lang="ja">木</button><button type="button" data-component="口" lang="ja">口</button>
+      <button type="button" data-component="言" lang="ja">言</button><button type="button" data-component="糸" lang="ja">糸</button>
+      <button type="button" data-component="日" lang="ja">日</button><button type="button" data-component="心" lang="ja">心</button>
+      <button type="button" data-component="友" lang="ja">友</button>
+    </p>
+    <div class="kj-checks">
+      <label><input type="checkbox" id="kj-f-sheets"> add a practice page for each kanji</label>
+      <label><input type="checkbox" id="kj-f-rare"> include rare kanji</label>
+    </div>
+    <p class="kj-note">Kanji that contain the component, with its strokes in red, in learning order (grade, then frequency).
+      Nested parts count too: 援 shows up under 友 via 爰.</p>
+    <div id="kj-f-out"></div>
+  </section>
+
+  <div class="kj-list" id="kj-list" hidden>
+    <div class="kj-list__head">
+      <div><strong>Your list</strong><span id="kj-list-count"></span></div>
+      <div class="kj-actions">
+        <button type="button" class="kj-btn" id="kj-list-clear">Clear</button>
+        <button type="button" class="kj-btn kj-btn--primary" id="kj-list-generate">Generate worksheet</button>
+      </div>
+    </div>
+    <div class="kj-list__chars" id="kj-list-chars"></div>
+  </div>
+
+</div>
+
+<script>
+{% include kanji/romaji.js %}
+{% include kanji/worksheet.js %}
+{% include kanji/app.js %}
+</script>

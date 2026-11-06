@@ -1,0 +1,23 @@
+title: Kanji practice
+description: Kanji and word practice sheets with stroke order, readings and example words.
+url: "https://kanji-practice.github.io"
+baseurl: ""
+lang: en
+
+exclude:
+  - sources
+  - scripts
+  - README.md
+  - LICENSE
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - .github
+
+# Optional password lock (_plugins/site_lock.rb). It only runs for pages that set `protect: kanji`
+# in their front matter, and then needs the KANJI_PASSWORD environment variable at build time.
+# Changing the salt logs everyone out.
+site_lock:
+  salt: "5d0c2c7c0b8e4b0f9a7d3e1c6f2a8b44"
+  locks:
+    kanji: KANJI_PASSWORD

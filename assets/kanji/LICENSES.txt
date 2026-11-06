@@ -1,0 +1,29 @@
+Licences and attribution: kanji worksheets on https://kanji-practice.github.io/
+===========================================================================
+
+Every worksheet generated on the Kanji pages, and the data files under /assets/kanji/data/, are
+derived from the datasets below by scripts/build_data.py (source repository:
+https://github.com/kanji-practice/kanji-practice.github.io). They are distributed under the same licences as their sources:
+CC BY-SA 4.0 (and CC BY-SA 3.0 for the KanjiVG parts).
+
+Data files (/assets/kanji/data/):
+  kanji.json       KANJIDIC2 (meanings, readings, stroke count, grade, old JLPT level, frequency)
+                   + OpenJLPT (JLPT N5-N1 level)
+  components.json  KanjiVG component tree
+  s/*.json         KanjiVG stroke paths + JMdict example words
+
+KanjiVG          (c) Ulrich Apel, https://kanjivg.tagaini.net/
+                 Creative Commons Attribution-Share Alike 3.0, https://creativecommons.org/licenses/by-sa/3.0/
+KANJIDIC2/JMdict (c) Electronic Dictionary Research and Development Group, https://www.edrdg.org/
+                 Used in conformance with the Group's licence, https://www.edrdg.org/edrdg/licence.html
+                 Creative Commons Attribution-ShareAlike 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+OpenJLPT         https://github.com/evanclan/OpenJLPT, CC BY-SA 4.0 (full text at /assets/kanji/data/LICENSE-OpenJLPT.txt),
+                 based on Jonathan Waller's JLPT lists, https://www.tanos.co.uk/jlpt/
+
+Font            Noto Sans JP, https://fonts.google.com/noto/specimen/Noto+Sans+JP
+                 SIL Open Font License 1.1, https://openfontlicense.org/
+
+Generated worksheets are adaptations of the data above and are shared under CC BY-SA 4.0
+(https://creativecommons.org/licenses/by-sa/4.0/). If you share or publish them, keep this
+attribution with them. The JLPT levels are community estimates; the official JLPT publishes no
+kanji lists.

@@ -1,0 +1,6 @@
+[submodule "sources/kanjivg"]
+	path = sources/kanjivg
+	url = https://github.com/KanjiVG/kanjivg.git
+[submodule "sources/openjlpt"]
+	path = sources/openjlpt
+	url = https://github.com/evanclan/OpenJLPT.git
