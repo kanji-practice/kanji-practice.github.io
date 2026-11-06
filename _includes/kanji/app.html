@@ -130,6 +130,7 @@
   .kj-checks { display: flex; flex-wrap: wrap; gap: 0.4em 1.4em; margin: 0.8em 0 0; font-size: 0.8em; }
   .kj-checks label { display: inline-flex; align-items: center; gap: 0.4em; cursor: pointer; }
   .kj-checks input { margin: 0; accent-color: var(--kj-accent); }
+  .kj-checks select { font: inherit; padding: 0.2em 0.4em; border: 1px solid var(--kj-border); border-radius: 0.4em; background: var(--kj-card); color: var(--kj-ink); }
   .kj-family-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.2em, 1fr)); gap: 0.5em; margin-top: 1em; }
   .kj-fam { display: flex; flex-direction: column; align-items: center; gap: 0.2em; padding: 0.45em 0.3em; border: 1px solid var(--kj-border);
     border-radius: 0.6em; background: var(--kj-card); color: var(--kj-ink); cursor: pointer; font: inherit; min-width: 0; }
@@ -184,7 +185,7 @@
   <div class="kj-tabs" role="tablist">
     <button type="button" class="kj-tab is-active" role="tab" aria-selected="true" data-tab="search">Search</button>
     <button type="button" class="kj-tab" role="tab" aria-selected="false" data-tab="bundles">Bundles <small>JLPT · grade · frequency</small></button>
-    <button type="button" class="kj-tab" role="tab" aria-selected="false" data-tab="family">Families <small>shared components</small></button>
+    <button type="button" class="kj-tab" role="tab" aria-selected="false" data-tab="family">Radicals <small>shared parts</small></button>
   </div>
 
   <section class="kj-panel" data-panel="search">
@@ -262,17 +263,20 @@
 
   <section class="kj-panel" data-panel="family" hidden>
     <form class="kj-search" id="kj-f-form">
-      <input id="kj-f-q" type="search" autocomplete="off" placeholder="A component or radical — 友, 氵, 言 …" aria-label="Component">
-      <button type="submit" class="kj-btn kj-btn--primary">Show family</button>
+      <input id="kj-f-q" type="search" autocomplete="off" placeholder="A radical or part — 氵, 言, 友 …" aria-label="Radical or part">
+      <button type="submit" class="kj-btn kj-btn--primary">Show kanji</button>
     </form>
-    <p class="kj-hint">Common parts
-      <button type="button" data-component="氵" lang="ja">氵</button><button type="button" data-component="亻" lang="ja">亻</button>
-      <button type="button" data-component="扌" lang="ja">扌</button><button type="button" data-component="艹" lang="ja">艹</button>
-      <button type="button" data-component="木" lang="ja">木</button><button type="button" data-component="口" lang="ja">口</button>
-      <button type="button" data-component="言" lang="ja">言</button><button type="button" data-component="糸" lang="ja">糸</button>
-      <button type="button" data-component="日" lang="ja">日</button><button type="button" data-component="心" lang="ja">心</button>
-      <button type="button" data-component="友" lang="ja">友</button>
-    </p>
+    <div class="kj-checks">
+      <label>Order
+        <select id="kj-f-order">
+          <option value="simple">simple to complex (WaniKani style)</option>
+          <option value="common">most useful first</option>
+          <option value="count">most kanji first</option>
+        </select>
+      </label>
+    </div>
+    <div class="kj-strip" id="kj-f-radicals"></div>
+    <p class="kj-note">Common radicals and parts. Hover for the meaning, click to see the kanji built with it.</p>
     <div class="kj-checks">
       <label><input type="checkbox" id="kj-f-sheets"> add a practice page for each kanji</label>
       <label><input type="checkbox" id="kj-f-rare"> include rare kanji</label>

@@ -1,4 +1,4 @@
-/* Kanji worksheet page: search (kanji and words), bundles and component families; pages are drawn by Worksheet. */
+/* Kanji worksheet page: search (kanji and words), bundles and radical families; pages are drawn by Worksheet. */
 (function () {
   var DATA = '/assets/kanji/data/';
   var root = document.getElementById('kanji-app');
@@ -598,8 +598,57 @@
   }
   $('#kj-f-form').addEventListener('submit', function (e) { e.preventDefault(); runFamily(); });
   $$('#kj-f-rare, #kj-f-sheets').forEach(function (el) { el.addEventListener('change', runFamily); });
-  $$('[data-component]').forEach(function (b) {
-    b.addEventListener('click', function () { famInput.value = b.getAttribute('data-component'); runFamily(); });
+  /* char, stroke count, meaning; the 214 Kangxi radicals plus common variants; the common ones come first */
+  var RADICALS = ('氵 3 water|亻 2 person|扌 3 hand|艹 3 grass|木 4 tree|口 3 mouth|言 7 speech|糸 6 thread|日 4 sun, day|心 4 heart|忄 3 heart|' +
+    '女 3 woman|土 3 earth|金 8 metal, gold|火 4 fire|水 4 water|犭 3 animal|禾 5 grain|竹 6 bamboo|辶 3 road, walk|宀 3 roof|' +
+    '疒 5 sickness|門 8 gate|食 9 eat|馬 10 horse|魚 11 fish|車 7 vehicle|貝 7 shell, money|目 5 eye|耳 6 ear|足 7 foot|手 4 hand|' +
+    '石 5 stone|山 3 mountain|川 3 river|田 5 field|力 2 power|刀 2 sword|刂 2 knife|攵 4 strike|阝 3 hill, village|彳 3 step|雨 8 rain|' +
+    '月 4 moon, flesh|衣 6 clothes|衤 5 clothes|示 5 altar|礻 4 altar|米 6 rice|虫 6 insect|頁 9 page, head|隹 8 bird|大 3 big|' +
+    '小 3 small|寸 3 inch, hand|又 2 again, hand|厂 2 cliff|广 3 building|囗 3 enclosure|冫 2 ice|立 5 stand|方 4 direction|白 5 white|' +
+    '生 5 life|止 4 stop|王 4 king|人 2 person|子 3 child|音 9 sound|革 9 leather|走 7 run|' +
+    '一 1 one|丨 1 line|丶 1 dot|丿 1 slash|乙 1 second|亅 1 hook|二 2 two|亠 2 lid|儿 2 legs|入 2 enter|八 2 eight|冂 2 box|' +
+    '冖 2 cover|勹 2 wrap|匕 2 spoon|匚 2 hiding box|十 2 ten|卜 2 divination|卩 2 seal|厶 2 private|凵 2 open box|几 2 table|' +
+    '工 3 work|己 3 self|巾 3 cloth|干 3 dry|幺 3 short thread|廴 3 stride|弋 3 ceremony|弓 3 bow|彐 3 snout|彡 3 hair|' +
+    '尢 3 lame|尸 3 corpse|屮 3 sprout|巛 3 river|夂 3 go|夕 3 evening|士 3 scholar|欠 4 yawn|歹 4 death|殳 4 weapon|' +
+    '毋 4 do not|比 4 compare|毛 4 fur|氏 4 clan|气 4 steam|爪 4 claw|爫 4 claw|父 4 father|爻 4 mix|爿 4 split wood|' +
+    '片 4 slice|牙 4 fang|牛 4 cow|牜 4 cow|犬 4 dog|斗 4 dipper|斤 4 axe|支 4 branch|文 4 writing|无 4 not|戈 4 spear|' +
+    '戸 4 door|氺 4 water|灬 4 fire|玄 5 dark|玉 5 jade|瓜 5 melon|瓦 5 tile|甘 5 sweet|用 5 use|疋 5 cloth|癶 5 footsteps|' +
+    '皮 5 skin|皿 5 dish|矛 5 spear|矢 5 arrow|禸 5 track|穴 5 hole|母 5 mother|罒 5 net|缶 6 jar|羊 6 sheep|羽 6 feather|' +
+    '老 6 old|而 6 and|耒 6 plow|聿 6 brush|肉 6 meat|臣 6 minister|自 6 self|至 6 arrive|臼 6 mortar|舌 6 tongue|舛 6 oppose|' +
+    '舟 6 boat|艮 6 stopping|色 6 color|虍 6 tiger|血 6 blood|行 6 go|西 6 west|网 6 net|見 7 see|角 7 horn|谷 7 valley|' +
+    '豆 7 bean|豕 7 pig|豸 7 cat|赤 7 red|身 7 body|辛 7 bitter|辰 7 morning|邑 7 village|酉 7 liquor|釆 7 divide|里 7 village|' +
+    '麦 7 wheat|長 8 long|阜 8 hill|隶 8 slave|青 8 blue|非 8 not|斉 8 even|面 9 face|韋 9 leather|韭 9 leek|香 9 fragrance|' +
+    '風 9 wind|飛 9 fly|首 9 head|高 10 tall|骨 10 bone|髟 10 long hair|鬥 10 fight|鬯 10 sacrificial wine|鬲 10 tripod|' +
+    '鬼 10 ghost|竜 10 dragon|鳥 11 bird|鹵 11 salt|鹿 11 deer|麻 11 hemp|黒 11 black|亀 11 turtle|黃 12 yellow|黄 12 yellow|' +
+    '黍 12 millet|黹 12 embroidery|歯 12 tooth|黽 13 frog|鼎 13 tripod|鼓 13 drum|鼠 13 rat|鼻 14 nose|齊 14 even|齒 15 tooth|' +
+    '龍 16 dragon|龜 16 turtle|龠 17 flute').split('|').map(function (r) {
+    var p = r.split(' ');
+    return { ch: p[0], strokes: +p[1], meaning: p.slice(2).join(' '), n: 0 };
+  });
+  var radOrder = $('#kj-f-order');
+  function showRadicals() {
+    var list = RADICALS.slice(), by = radOrder.value;
+    if (by === 'simple') list.sort(function (a, b) { return a.strokes - b.strokes || b.n - a.n; });
+    else if (by === 'count') list.sort(function (a, b) { return b.n - a.n; });
+    $('#kj-f-radicals').innerHTML = list.map(function (r) {
+      return '<button type="button" class="kj-mini" data-component="' + r.ch + '" lang="ja" title="' + esc(r.meaning) + ' · ' + r.strokes +
+        ' strokes' + (r.n ? ' · ' + r.n + ' kanji' : '') + '">' + r.ch + '</button>';
+    }).join('');
+  }
+  /* kanji counts need the component index; the strip is shown right away and re-sorted once they arrive */
+  loadComponents().then(function (index) {
+    Object.keys(index).forEach(function (ch) {
+      var seen = {};
+      index[ch].forEach(function (p) { seen[p[0]] = seen[p[1]] = true; });
+      RADICALS.forEach(function (r) { if (seen[r.ch] && ch !== r.ch) r.n++; });
+    });
+    showRadicals();
+  }).catch(function () {});
+  radOrder.addEventListener('change', showRadicals);
+  showRadicals();
+  $('#kj-f-radicals').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-component]');
+    if (b) { famInput.value = b.getAttribute('data-component'); runFamily(); }
   });
   famOut.addEventListener('click', function (e) {
     if (e.target.closest('#kj-f-generate') && famState) {
